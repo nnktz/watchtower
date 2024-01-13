@@ -3,13 +3,14 @@
 import Webcam from 'react-webcam'
 import { useRef, useState } from 'react'
 import { Camera, FlipHorizontal, PersonStanding, Video } from 'lucide-react'
+import { toast } from 'sonner'
+import { Rings } from 'react-loader-spinner'
 
 import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-import { Rings } from 'react-loader-spinner'
 import { VolumePopover } from '@/components/volume-popover'
+import { RenderFeatureHighlightsSection } from '@/components/render-feature-highlights-section'
 
 const HomePage = () => {
   const webcamRef = useRef<Webcam>(null)
@@ -95,6 +96,17 @@ const HomePage = () => {
 
             <VolumePopover />
           </div>
+        </div>
+
+        <div className="h-full flex-1 overflow-y-scroll px-2 py-4">
+          <RenderFeatureHighlightsSection
+            isRecording={isRecording}
+            autoRecordEnable={autoRecordEnable}
+            setMirrored={setMirrored}
+            usePromptRecord={usePromptRecord}
+            usePromptScreenshot={usePromptScreenshot}
+            toggleAutoRecord={toggleAutoRecord}
+          />
         </div>
       </div>
     </div>
