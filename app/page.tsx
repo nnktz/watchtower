@@ -1,16 +1,25 @@
 'use client'
 
+import * as cocossd from '@tensorflow-models/coco-ssd'
 import Webcam from 'react-webcam'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, FlipHorizontal, PersonStanding, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { Rings } from 'react-loader-spinner'
+
+import '@tensorflow/tfjs-backend-cpu'
+import '@tensorflow/tfjs-backend-webgl'
+
+import { resizeCanvas } from '@/lib/canvas'
+import { drawOnCanvas } from '@/lib/draw'
 
 import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
 import { VolumePopover } from '@/components/volume-popover'
 import { RenderFeatureHighlightsSection } from '@/components/render-feature-highlights-section'
+
+let interval: any = null
 
 const HomePage = () => {
   const webcamRef = useRef<Webcam>(null)
@@ -19,6 +28,50 @@ const HomePage = () => {
   const [mirrored, setMirrored] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [autoRecordEnable, setAutoRecordEnable] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [model, setModel] = useState<cocossd.ObjectDetection>()
+
+  const initModel = async () => {
+    const loadedModel: cocossd.ObjectDetection = await cocossd.load({
+      base: 'mobilenet_v2',
+    })
+    setModel(loadedModel)
+  }
+
+  const runPrediction = async () => {
+    if (
+      model &&
+      webcamRef.current &&
+      webcamRef.current.video &&
+      webcamRef.current.video.readyState === 4
+    ) {
+      const predictions = await model.detect(webcamRef.current.video)
+
+      resizeCanvas(canvasRef, webcamRef)
+      drawOnCanvas(mirrored, predictions, canvasRef.current?.getContext('2d'))
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true)
+    initModel()
+  }, [])
+
+  useEffect(() => {
+    if (model) {
+      setLoading(false)
+    }
+  }, [model])
+
+  useEffect(() => {
+    interval = setInterval(() => {
+      runPrediction()
+    }, 100)
+
+    return () => clearInterval(interval)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webcamRef.current, model, mirrored])
 
   const usePromptScreenshot = () => {}
 
@@ -109,6 +162,12 @@ const HomePage = () => {
           />
         </div>
       </div>
+
+      {loading && (
+        <div className="absolute z-50 flex h-full w-full items-center justify-center bg-primary-foreground">
+          Getting things ready . . . <Rings color="red" height={50} />
+        </div>
+      )}
     </div>
   )
 }
