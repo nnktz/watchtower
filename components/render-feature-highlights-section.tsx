@@ -13,7 +13,7 @@ interface IProps {
   usePromptRecord: () => void
   toggleAutoRecord: () => void
   isRecording: boolean
-  autoRecordEnable: boolean
+  autoRecordEnabled: boolean
 }
 
 export const RenderFeatureHighlightsSection = ({
@@ -22,7 +22,7 @@ export const RenderFeatureHighlightsSection = ({
   usePromptScreenshot,
   toggleAutoRecord,
   isRecording,
-  autoRecordEnable,
+  autoRecordEnabled,
 }: IProps) => {
   return (
     <div className="text-xs text-muted-foreground">
@@ -90,12 +90,12 @@ export const RenderFeatureHighlightsSection = ({
           <p>Option to enable/disable automatic video recording whenever required.</p>
 
           <Button
-            variant={autoRecordEnable ? 'destructive' : 'outline'}
+            variant={autoRecordEnabled ? 'destructive' : 'outline'}
             size={'icon'}
             className="my-2 h-6 w-6"
             onClick={toggleAutoRecord}
           >
-            {autoRecordEnable ? <Rings color="white" height={30} /> : <PersonStanding size={14} />}
+            {autoRecordEnabled ? <Rings color="white" height={30} /> : <PersonStanding size={14} />}
           </Button>
         </li>
 

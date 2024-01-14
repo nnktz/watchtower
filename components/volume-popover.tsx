@@ -1,7 +1,7 @@
 'use client'
 
 import { Volume2 } from 'lucide-react'
-import { useState } from 'react'
+import { Dispatch, SetStateAction } from 'react'
 
 import { beep } from '@/lib/audio'
 
@@ -9,9 +9,12 @@ import { Button } from './ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Slider } from './ui/slider'
 
-export const VolumePopover = () => {
-  const [volume, setVolume] = useState(0.8)
+interface VolumePopoverProps {
+  volume: number
+  setVolume: Dispatch<SetStateAction<number>>
+}
 
+export const VolumePopover = ({ volume, setVolume }: VolumePopoverProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>

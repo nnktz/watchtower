@@ -12,6 +12,8 @@ import '@tensorflow/tfjs-backend-webgl'
 
 import { resizeCanvas } from '@/lib/canvas'
 import { drawOnCanvas } from '@/lib/draw'
+import { formateDate } from '@/lib/utils'
+import { beep } from '@/lib/audio'
 
 import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from '@/components/mode-toggle'
@@ -20,14 +22,17 @@ import { VolumePopover } from '@/components/volume-popover'
 import { RenderFeatureHighlightsSection } from '@/components/render-feature-highlights-section'
 
 let interval: any = null
+let stopTimeout: any = null
 
 const HomePage = () => {
   const webcamRef = useRef<Webcam>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
+  const [volume, setVolume] = useState(0.8)
   const [mirrored, setMirrored] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
-  const [autoRecordEnable, setAutoRecordEnable] = useState(false)
+  const [autoRecordEnabled, setAutoRecordEnabled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [model, setModel] = useState<cocossd.ObjectDetection>()
 
@@ -49,8 +54,50 @@ const HomePage = () => {
 
       resizeCanvas(canvasRef, webcamRef)
       drawOnCanvas(mirrored, predictions, canvasRef.current?.getContext('2d'))
+
+      let isPerson: boolean = false
+
+      if (predictions.length > 0) {
+        predictions.forEach((prediction) => {
+          isPerson = prediction.class === 'person'
+        })
+
+        if (isPerson && autoRecordEnabled) {
+          startRecording(true)
+        }
+      }
     }
   }
+
+  useEffect(() => {
+    if (webcamRef && webcamRef.current) {
+      const stream = (webcamRef.current.video as any).captureStream()
+
+      if (stream) {
+        mediaRecorderRef.current = new MediaRecorder(stream)
+
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            const recordedBlob = new Blob([e.data], { type: 'video' })
+            const videoURL = URL.createObjectURL(recordedBlob)
+
+            const a = document.createElement('a')
+            a.href = videoURL
+            a.download = `${formateDate(new Date())}.webm`
+            a.click()
+          }
+        }
+
+        mediaRecorderRef.current.onstart = (e) => {
+          setIsRecording(true)
+        }
+
+        mediaRecorderRef.current.onstop = (e) => {
+          setIsRecording(false)
+        }
+      }
+    }
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -71,18 +118,45 @@ const HomePage = () => {
     return () => clearInterval(interval)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [webcamRef.current, model, mirrored])
+  }, [webcamRef.current, model, mirrored, autoRecordEnabled])
 
   const usePromptScreenshot = () => {}
 
-  const usePromptRecord = () => {}
+  const usePromptRecord = () => {
+    if (!webcamRef.current) {
+      toast('Camera is not found. Please refresh!')
+    }
+
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.requestData()
+      clearTimeout(stopTimeout)
+      mediaRecorderRef.current.stop()
+      toast('Recording saved to downloads!')
+    } else {
+      startRecording(false)
+    }
+  }
+
+  const startRecording = (doBeep: boolean) => {
+    if (webcamRef.current && mediaRecorderRef.current?.state !== 'recording') {
+      mediaRecorderRef.current?.start()
+      doBeep && beep(volume)
+
+      stopTimeout = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          mediaRecorderRef.current.requestData()
+          mediaRecorderRef.current.stop()
+        }
+      }, 30000)
+    }
+  }
 
   const toggleAutoRecord = () => {
-    if (autoRecordEnable) {
-      setAutoRecordEnable(false)
+    if (autoRecordEnabled) {
+      setAutoRecordEnabled(false)
       toast('Auto record enabled!')
     } else {
-      setAutoRecordEnable(true)
+      setAutoRecordEnabled(true)
       toast('Auto record disabled!')
     }
   }
@@ -136,25 +210,25 @@ const HomePage = () => {
             <Separator className="my-2" />
 
             <Button
-              variant={autoRecordEnable ? 'destructive' : 'outline'}
+              variant={autoRecordEnabled ? 'destructive' : 'outline'}
               size={'icon'}
               onClick={toggleAutoRecord}
             >
-              {autoRecordEnable ? <Rings color="white" height={45} /> : <PersonStanding />}
+              {autoRecordEnabled ? <Rings color="white" height={45} /> : <PersonStanding />}
             </Button>
           </div>
 
           <div className="flex flex-col gap-2">
             <Separator className="my-2" />
 
-            <VolumePopover />
+            <VolumePopover volume={volume} setVolume={setVolume} />
           </div>
         </div>
 
         <div className="h-full flex-1 overflow-y-scroll px-2 py-4">
           <RenderFeatureHighlightsSection
             isRecording={isRecording}
-            autoRecordEnable={autoRecordEnable}
+            autoRecordEnabled={autoRecordEnabled}
             setMirrored={setMirrored}
             usePromptRecord={usePromptRecord}
             usePromptScreenshot={usePromptScreenshot}
