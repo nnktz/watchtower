@@ -12,7 +12,7 @@ import '@tensorflow/tfjs-backend-webgl'
 
 import { resizeCanvas } from '@/lib/canvas'
 import { drawOnCanvas } from '@/lib/draw'
-import { formateDate } from '@/lib/utils'
+import { base64toBlob, formateDate } from '@/lib/utils'
 import { beep } from '@/lib/audio'
 
 import { Separator } from '@/components/ui/separator'
@@ -120,7 +120,20 @@ const HomePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webcamRef.current, model, mirrored, autoRecordEnabled])
 
-  const usePromptScreenshot = () => {}
+  const usePromptScreenshot = () => {
+    if (!webcamRef.current) {
+      toast('Camera is not found. Please refresh!')
+    } else {
+      const imgSrc = webcamRef.current.getScreenshot()
+      const blob = base64toBlob(imgSrc)
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${formateDate(new Date())}.png`
+      a.click()
+    }
+  }
 
   const usePromptRecord = () => {
     if (!webcamRef.current) {
