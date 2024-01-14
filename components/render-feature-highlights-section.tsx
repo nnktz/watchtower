@@ -6,6 +6,7 @@ import { Rings } from 'react-loader-spinner'
 
 import { Button } from './ui/button'
 import { Separator } from './ui/separator'
+import { SocialMediaLinks } from './social-media-links'
 
 interface IProps {
   setMirrored: Dispatch<SetStateAction<boolean>>
@@ -116,6 +117,7 @@ export const RenderFeatureHighlightsSection = ({
 
         <li className="space-y-4">
           <strong>Share your thoughts 💭</strong>
+          <SocialMediaLinks />
           <br />
           <br />
           <br />

@@ -118,7 +118,7 @@ const HomePage = () => {
     return () => clearInterval(interval)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [webcamRef.current, model, mirrored, autoRecordEnabled])
+  }, [webcamRef.current, model, mirrored, autoRecordEnabled, runPrediction])
 
   const usePromptScreenshot = () => {
     if (!webcamRef.current) {
